@@ -10,6 +10,8 @@ interface MessageComposerProps {
   onDelayMaxChange: (val: number) => void;
   contactCount: number;
   canSend: boolean;
+  /** Motivo para o envio estar bloqueado (ex.: WhatsApp desconectado). */
+  blockedReason?: string;
   isSending: boolean;
   onStartSending: () => void;
   onStopSending: () => void;
@@ -24,6 +26,7 @@ export default function MessageComposer({
   onDelayMaxChange,
   contactCount,
   canSend,
+  blockedReason,
   isSending,
   onStartSending,
   onStopSending,
@@ -129,6 +132,9 @@ export default function MessageComposer({
             </button>
           )}
         </div>
+        {!isSending && blockedReason && (
+          <p className="composer-blocked">{blockedReason}</p>
+        )}
       </div>
     </div>
   );

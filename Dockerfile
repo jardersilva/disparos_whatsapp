@@ -21,8 +21,8 @@ FROM nginx:alpine
 # Remove a configuração padrão do Nginx
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copia nossa configuração personalizada
-COPY nginx.conf /etc/nginx/conf.d/
+# Copia o template (o nginx:alpine aplica envsubst com EVOLUTION_API_URL/EVOLUTION_API_KEY ao iniciar)
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
 # Copia os arquivos buildados da etapa anterior
 COPY --from=build /app/dist /usr/share/nginx/html

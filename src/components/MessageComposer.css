@@ -104,6 +104,13 @@
   gap: 12px;
 }
 
+.composer-blocked {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--warning);
+  text-align: center;
+}
+
 .btn-send {
   flex: 1;
   justify-content: center;

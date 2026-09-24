@@ -1,6 +1,18 @@
+# Template processado pelo entrypoint do nginx:alpine (envsubst) na subida do container.
+# Variáveis obrigatórias: EVOLUTION_API_URL e EVOLUTION_API_KEY.
 server {
     listen 80;
     server_name localhost;
+
+    # Proxy para a Evolution API: a API key fica só no servidor, nunca vai para o navegador.
+    location /evolution/ {
+        rewrite ^/evolution/(.*)$ /$1 break;
+        proxy_pass ${EVOLUTION_API_URL};
+        proxy_ssl_server_name on;
+        proxy_set_header apikey "${EVOLUTION_API_KEY}";
+        proxy_set_header Cookie "";
+        proxy_read_timeout 60s;
+    }
 
     location / {
         root   /usr/share/nginx/html;

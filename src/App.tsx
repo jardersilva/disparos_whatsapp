@@ -1,24 +1,46 @@
 import { useState, useRef, useCallback } from 'react';
-import Settings from './components/Settings';
+import InstanceManager from './components/InstanceManager';
 import ImportSheet from './components/ImportSheet';
 import MessageComposer from './components/MessageComposer';
 import SendingConsole from './components/SendingConsole';
 import {
   createEvolutionClient,
   sendTextMessage,
+  getApiErrorMessage,
   delay,
 } from './services/evolutionApi';
-import type { EvolutionConfig } from './services/evolutionApi';
+import type { EvolutionConfig, ConnectionStatus } from './services/evolutionApi';
 import type { Contact } from './types';
 import './App.css';
 
+const ACTIVE_INSTANCE_KEY = 'disparos.activeInstance';
+
+function loadActiveInstance(): string {
+  try {
+    const saved = localStorage.getItem(ACTIVE_INSTANCE_KEY);
+    if (saved) return saved;
+  } catch {
+    // localStorage indisponível (modo privado etc.)
+  }
+  return import.meta.env.VITE_EVOLUTION_INSTANCE_NAME || '';
+}
+
 function App() {
-  // API Config
-  const [config, setConfig] = useState<EvolutionConfig>({
-    baseUrl: import.meta.env.VITE_EVOLUTION_API_URL || '',
-    apiKey: import.meta.env.VITE_EVOLUTION_API_KEY || '',
-    instanceName: import.meta.env.VITE_EVOLUTION_INSTANCE_NAME || '',
-  });
+  // Instância ativa (lembrada no navegador)
+  const [config, setConfig] = useState<EvolutionConfig>(() => ({
+    instanceName: loadActiveInstance(),
+  }));
+  const [instanceStatus, setInstanceStatus] = useState<ConnectionStatus | null>(null);
+
+  const handleActiveInstanceChange = useCallback((name: string) => {
+    setConfig({ instanceName: name });
+    try {
+      if (name) localStorage.setItem(ACTIVE_INSTANCE_KEY, name);
+      else localStorage.removeItem(ACTIVE_INSTANCE_KEY);
+    } catch {
+      // ignora
+    }
+  }, []);
 
   // Contacts
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -40,12 +62,16 @@ function App() {
       ? ((totalSent + totalErrors) / contacts.length) * 100
       : 0;
 
+  const blockedReason = !config.instanceName
+    ? 'Selecione ou crie uma instância na conexão WhatsApp.'
+    : instanceStatus !== 'open'
+    ? `A instância "${config.instanceName}" não está conectada ao WhatsApp.`
+    : undefined;
+
   const canSend =
     contacts.length > 0 &&
     message.trim().length > 0 &&
-    config.baseUrl.trim().length > 0 &&
-    config.apiKey.trim().length > 0 &&
-    config.instanceName.trim().length > 0;
+    !blockedReason;
 
   const handleImport = useCallback(
     (importedContacts: Contact[]) => {
@@ -76,7 +102,7 @@ function App() {
       prev.map((c) => ({ ...c, status: 'pending' as const, error: undefined, sentAt: undefined }))
     );
 
-    const client = createEvolutionClient(config);
+    const client = createEvolutionClient();
 
     for (let i = 0; i < contacts.length; i++) {
       if (stopRef.current) break;
@@ -111,8 +137,7 @@ function App() {
         );
         setTotalSent((prev) => prev + 1);
       } catch (err) {
-        const errorMsg =
-          err instanceof Error ? err.message : 'Erro desconhecido';
+        const errorMsg = getApiErrorMessage(err);
         setContacts((prev) =>
           prev.map((c) =>
             c.id === contact.id
@@ -167,7 +192,12 @@ function App() {
       <main className="app-main">
         <div className="app-grid">
           <div className="app-col-left">
-            <Settings config={config} onConfigChange={setConfig} />
+            <InstanceManager
+              activeInstance={config.instanceName}
+              onActiveInstanceChange={handleActiveInstanceChange}
+              onActiveStatusChange={setInstanceStatus}
+              locked={isSending}
+            />
             <ImportSheet onImport={handleImport} />
           </div>
 
@@ -183,6 +213,7 @@ function App() {
                   onDelayMaxChange={setDelayMax}
                   contactCount={contacts.length}
                   canSend={canSend}
+                  blockedReason={blockedReason}
                   isSending={isSending}
                   onStartSending={handleStartSending}
                   onStopSending={handleStopSending}
@@ -202,8 +233,8 @@ function App() {
                 <div className="empty-state-icon">📋</div>
                 <h3>Importe uma planilha para começar</h3>
                 <p>
-                  Configure a API e importe sua planilha de contatos para
-                  habilitar o envio de mensagens.
+                  Conecte uma instância do WhatsApp e importe sua planilha de
+                  contatos para habilitar o envio de mensagens.
                 </p>
               </div>
             )}

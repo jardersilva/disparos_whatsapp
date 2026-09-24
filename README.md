@@ -1,73 +1,35 @@
-# React + TypeScript + Vite
+# Disparos WhatsApp
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Disparo de mensagens em massa via [Evolution API](https://doc.evolution-api.com) (v2), com importação de contatos por planilha e gerenciamento de instâncias (criar, conectar por QR Code ou código de pareamento, desconectar e excluir).
 
-Currently, two official plugins are available:
+## Configuração
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+A API key **não** vai para o navegador: o front chama `/evolution/...` e um proxy (Vite em dev, nginx em produção) repassa para a Evolution adicionando o header `apikey`.
 
-## React Compiler
+| Variável | Onde | Descrição |
+| --- | --- | --- |
+| `EVOLUTION_API_URL` | runtime | URL da Evolution API, ex.: `https://evolution.seudominio.com` |
+| `EVOLUTION_API_KEY` | runtime | Key **global** (`AUTHENTICATION_API_KEY` do servidor Evolution). Necessária para listar/criar/excluir instâncias. |
+| `VITE_EVOLUTION_INSTANCE_NAME` | build (opcional) | Instância selecionada por padrão. |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+> Qualquer pessoa que acessar o app consegue usar a Evolution através do proxy. Não deixe o app aberto na internet sem proteção (ex.: autenticação básica no Easypanel/nginx).
 
-## Expanding the ESLint configuration
+## Desenvolvimento
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cp .env.example .env   # preencha as variáveis
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Produção (Docker)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+docker build -t disparos-whatsapp .
+docker run -p 8080:80 \
+  -e EVOLUTION_API_URL=https://evolution.seudominio.com \
+  -e EVOLUTION_API_KEY=sua-key-global \
+  disparos-whatsapp
 ```
+
+No Easypanel, defina `EVOLUTION_API_URL` e `EVOLUTION_API_KEY` nas variáveis de ambiente do serviço. O nginx lê essas variáveis quando o container sobe, então não é preciso rebuildar para trocar a key.

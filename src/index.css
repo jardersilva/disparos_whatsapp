@@ -271,3 +271,55 @@ label {
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
+
+.spinner-sm {
+  width: 14px;
+  height: 14px;
+}
+
+/* ===== Button sizes ===== */
+.btn-primary.btn-sm,
+.btn-secondary.btn-sm,
+.btn-danger.btn-sm {
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-secondary:disabled,
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== Form field ===== */
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Status dot ===== */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.open {
+  background: var(--success);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.status-dot.connecting {
+  background: var(--warning);
+  animation: pulse-glow 1s ease-in-out infinite;
+}
+
+.status-dot.close {
+  background: var(--danger);
+}
