@@ -1,0 +1,18 @@
+#!/bin/sh
+# Carregado (source) pelo /docker-entrypoint.sh antes do envsubst dos templates.
+
+# Aceita os nomes antigos (VITE_*) para não quebrar deploys existentes.
+: "${EVOLUTION_API_URL:=${VITE_EVOLUTION_API_URL:-}}"
+: "${EVOLUTION_API_KEY:=${VITE_EVOLUTION_API_KEY:-}}"
+
+missing=""
+[ -n "$EVOLUTION_API_URL" ] || missing="$missing EVOLUTION_API_URL"
+[ -n "$EVOLUTION_API_KEY" ] || missing="$missing EVOLUTION_API_KEY"
+if [ -n "$missing" ]; then
+    echo "ERRO: defina as variáveis de ambiente:$missing" >&2
+    echo "      EVOLUTION_API_URL = URL da Evolution API" >&2
+    echo "      EVOLUTION_API_KEY = key global (AUTHENTICATION_API_KEY da Evolution)" >&2
+    exit 1
+fi
+
+export EVOLUTION_API_URL EVOLUTION_API_KEY
